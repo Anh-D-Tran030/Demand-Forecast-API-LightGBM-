@@ -1,0 +1,9 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEMAND_FORECAST_MODEL_PATH=model/model.pkl
+    volumes:
+      - ./model:/app/model
