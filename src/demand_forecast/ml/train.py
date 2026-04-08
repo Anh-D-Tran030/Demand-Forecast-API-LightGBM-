@@ -40,11 +40,36 @@ def split_train_test(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     return train_df, test_df
 
 
+def generate_synthetic_training_data(data_path: Path) -> None:
+    # Mirror scripts/download_data.py by sourcing rows from California Housing.
+    from sklearn.datasets import fetch_california_housing
+
+    dataset = fetch_california_housing(as_frame=True)
+    frame = dataset.frame
+
+    # Convert source rows into the schema expected by this training pipeline.
+    synthetic_df = pd.DataFrame(
+        {
+            "date": pd.date_range(start="2013-01-01", periods=len(frame), freq="D"),
+            "store": 1,
+            "item": 1,
+            "sales": (frame["MedHouseVal"] * 100).round().clip(lower=0).astype("int32"),
+        }
+    )
+
+    data_path.parent.mkdir(parents=True, exist_ok=True)
+    synthetic_df.to_csv(data_path, index=False)
+    print(f"Generated synthetic dataset at {data_path}")
+
+
 def main() -> None:
     root = Path(__file__).resolve().parents[3]
     data_path = root / "data" / "raw" / "train.csv"
     model_dir = root / "model"
     model_dir.mkdir(parents=True, exist_ok=True)
+
+    if not data_path.exists():
+        generate_synthetic_training_data(data_path)
 
     raw_df = load_training_data(data_path)
     feature_df = add_training_features(raw_df)
